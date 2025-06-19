@@ -1,0 +1,16 @@
+package com.mungey.demo.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Team {
+    public int score;
+    public Name team;
+    public boolean isWinner;
+}
