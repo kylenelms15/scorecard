@@ -1,11 +1,9 @@
-package com.mungey.demo.model;
+package com.mungey.demo.model.scoreboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.Date;
 
 @Getter
 @Setter

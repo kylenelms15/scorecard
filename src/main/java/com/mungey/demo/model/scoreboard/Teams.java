@@ -1,4 +1,4 @@
-package com.mungey.demo.model.plays;
+package com.mungey.demo.model.scoreboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlayAbout {
-    int atBatIndex;
-    int inning;
-    boolean isTopInning;
+public class Teams {
+    public Team away;
+    public Team home;
 }

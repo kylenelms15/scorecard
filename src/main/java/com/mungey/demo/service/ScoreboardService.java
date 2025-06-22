@@ -1,9 +1,9 @@
 package com.mungey.demo.service;
 
 import com.google.gson.Gson;
-import com.mungey.demo.model.GameId;
-import com.mungey.demo.model.GameResult;
-import com.mungey.demo.model.Scoreboard;
+import com.mungey.demo.model.scoreboard.GameId;
+import com.mungey.demo.model.scoreboard.GameResult;
+import com.mungey.demo.model.scoreboard.Scoreboard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;

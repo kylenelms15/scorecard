@@ -1,6 +1,6 @@
 package com.mungey.demo.controller;
 
-import com.mungey.demo.model.Scoreboard;
+import com.mungey.demo.model.scoreboard.Scoreboard;
 import com.mungey.demo.service.ScoreboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;

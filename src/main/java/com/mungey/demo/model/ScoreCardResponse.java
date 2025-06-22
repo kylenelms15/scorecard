@@ -5,11 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Teams {
-    public Team away;
-    public Team home;
+public class ScoreCardResponse {
+    List<HalfInning> innings;
 }

@@ -1,4 +1,4 @@
-package com.mungey.demo.model;
+package com.mungey.demo.model.scoreboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,8 +9,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Game {
+public class Games {
     public String gamePk;
-    public Teams teams;
-    public int scheduledInnings;
 }

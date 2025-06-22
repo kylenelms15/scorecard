@@ -11,6 +11,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Games {
-    public String gamePk;
+public class HalfInning {
+    double inning;
+    List<PlayResponse> plays;
 }

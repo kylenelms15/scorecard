@@ -1,5 +1,6 @@
 package com.mungey.demo.controller;
 
+import com.mungey.demo.model.ScoreCardResponse;
 import com.mungey.demo.model.plays.AllPlays;
 import com.mungey.demo.model.plays.Plays;
 import com.mungey.demo.service.ScoreCardService;
@@ -15,7 +16,7 @@ public class ScoreCardController {
     private ScoreCardService scoreCardService;
 
     @GetMapping(path="/{gameId}")
-    public @ResponseBody ResponseEntity<AllPlays> getScoreCard(@PathVariable String gameId) {
+    public @ResponseBody ResponseEntity<ScoreCardResponse> getScoreCard(@PathVariable String gameId) {
 
         return ResponseEntity.ok(scoreCardService.buildScoreCard(gameId));
     }
