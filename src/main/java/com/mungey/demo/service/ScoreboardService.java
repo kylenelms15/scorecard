@@ -1,7 +1,6 @@
 package com.mungey.demo.service;
 
 import com.google.gson.Gson;
-import com.mungey.demo.model.Game;
 import com.mungey.demo.model.GameId;
 import com.mungey.demo.model.GameResult;
 import com.mungey.demo.model.Scoreboard;
