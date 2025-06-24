@@ -1,16 +1,15 @@
-package com.mungey.demo.model;
+package com.mungey.demo.model.context;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ScoreCardResponse {
-    List<HalfInning> innings;
+public class ContextOffical {
+    Offical official;
+    String officialType;
 }

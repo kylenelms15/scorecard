@@ -1,12 +1,13 @@
 package com.mungey.demo.controller;
 
-import com.mungey.demo.model.ScoreCardResponse;
-import com.mungey.demo.model.plays.AllPlays;
-import com.mungey.demo.model.plays.Plays;
+import com.mungey.demo.model.context.BattersFaced;
+import com.mungey.demo.model.plays.ScoreCardResponse;
 import com.mungey.demo.service.ScoreCardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(path="/scorecard")
@@ -19,5 +20,11 @@ public class ScoreCardController {
     public @ResponseBody ResponseEntity<ScoreCardResponse> getScoreCard(@PathVariable String gameId) {
 
         return ResponseEntity.ok(scoreCardService.buildScoreCard(gameId));
+    }
+
+    @GetMapping(path="/test/{gameId}")
+    public @ResponseBody ResponseEntity<List<BattersFaced>> boxscoreTest(@PathVariable String gameId) {
+
+        return ResponseEntity.ok(scoreCardService.boxscoreTest(gameId));
     }
 }
