@@ -1,6 +1,6 @@
 package com.mungey.demo.controller;
 
-import com.mungey.demo.model.context.BattersFaced;
+import com.mungey.demo.model.context.Pitcher;
 import com.mungey.demo.model.plays.ScoreCardResponse;
 import com.mungey.demo.service.ScoreCardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ public class ScoreCardController {
     }
 
     @GetMapping(path="/test/{gameId}")
-    public @ResponseBody ResponseEntity<List<BattersFaced>> boxscoreTest(@PathVariable String gameId) {
+    public @ResponseBody ResponseEntity<List<Pitcher>> boxscoreTest(@PathVariable String gameId) {
 
         return ResponseEntity.ok(scoreCardService.boxscoreTest(gameId));
     }

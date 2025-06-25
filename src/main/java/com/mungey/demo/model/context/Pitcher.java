@@ -5,15 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BoxscoreContext {
-    List<ContextOffical> officials;
-    List<ContextInfo> info;
-    List<ContextTopPerformer> topPerformers;
-    BoxScoreTeams teams;
+public class Pitcher {
+    String name;
+    int battersFaced;
+    int pitches;
+    int strikes;
+    int jerseyNumber;
 }

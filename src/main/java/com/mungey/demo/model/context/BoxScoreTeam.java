@@ -11,9 +11,9 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BoxscoreContext {
-    List<ContextOffical> officials;
-    List<ContextInfo> info;
-    List<ContextTopPerformer> topPerformers;
-    BoxScoreTeams teams;
+public class BoxScoreTeam {
+    TeamInfo team;
+    List<Integer> battingOrder;
+    List<Integer> pitchers;
+    List<Integer> bullpen;
 }

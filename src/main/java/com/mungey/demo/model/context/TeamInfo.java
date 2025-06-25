@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BattersFaced {
-    String pitcher;
-    int batters;
+public class TeamInfo {
+    String name;
 }
