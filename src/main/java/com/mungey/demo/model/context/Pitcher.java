@@ -15,4 +15,5 @@ public class Pitcher {
     int pitches;
     int strikes;
     int jerseyNumber;
+    String team;
 }

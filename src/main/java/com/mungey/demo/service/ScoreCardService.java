@@ -3,6 +3,7 @@ package com.mungey.demo.service;
 import com.google.gson.Gson;
 import com.mungey.demo.model.context.Pitcher;
 import com.mungey.demo.model.context.BoxscoreContext;
+import com.mungey.demo.model.player.Lineup;
 import com.mungey.demo.model.player.PlayerLookup;
 import com.mungey.demo.model.plays.HalfInning;
 import com.mungey.demo.model.plays.PlayResponse;
@@ -30,25 +31,18 @@ public class ScoreCardService {
     public ScoreCardResponse buildScoreCard(String gameId) {
         ScoreCardResponse scoreCardResponse = new ScoreCardResponse();
 
-//        List<Plays> playsList = getPlays(gameId).getAllPlays();
-//
-//        int finalInning = getLastInning(playsList);
-//        scoreCardResponse.setInnings(buildPlays(finalInning, playsList));
-
         BoxscoreContext boxscoreContext = buildGameContext(gameId);
-
 
         buildOfficals(scoreCardResponse, boxscoreContext);
         buildExtraContext(scoreCardResponse, boxscoreContext);
         scoreCardResponse.setPitchers(getPitcherJerseyNumbers(boxscoreContext, scoreCardResponse.getPitchers()));
+        scoreCardResponse.setLineup(buildLineUp(boxscoreContext));
+
+        List<Plays> playsList = getPlays(gameId).getAllPlays();
+        int finalInning = getLastInning(playsList);
+        scoreCardResponse.setInnings(buildPlays(finalInning, playsList, scoreCardResponse.getLineup()));
 
         return scoreCardResponse;
-    }
-
-    public List<Pitcher> boxscoreTest(String gameId) {
-
-        //return buildPitchers("Abbott, A 25; Rogers, Ta 3; Richardson 1; Pagán 3; Mikolas 20; Leahy 7; Graceffo 6.");
-        return null;
     }
 
     private AllPlays getPlays(String gameId) {
@@ -74,7 +68,14 @@ public class ScoreCardService {
 
         allPlays.forEach(play -> {
             PlayResponse inningPlay = new PlayResponse();
-            inningPlay.setDescription(play.getResult().getDescription());
+
+            String playerName = play.getMatchup().getBatter().getFullName();
+            inningPlay.setPlayer(playerName);
+
+            String playDescription = play.getResult().getDescription();
+            inningPlay.setResult(getPlayResult(playDescription.replace(playerName + " ", "")));
+
+            inningPlay.setDescription(playDescription);
 
             if(play.getAbout().isTopInning() && play.getAbout().getInning() == inning) {
                 topPlays.add(inningPlay);
@@ -97,7 +98,7 @@ public class ScoreCardService {
         return plays.getLast().getAbout().getInning();
     }
 
-    private List<HalfInning> buildPlays(int finalInning, List<Plays> playsList) {
+    private List<HalfInning> buildPlays(int finalInning, List<Plays> playsList, Lineup lineup) {
         List<HalfInning> innings = new ArrayList<>();
 
         for(int i = 1; i <= finalInning; i++){
@@ -194,12 +195,22 @@ public class ScoreCardService {
     }
 
     private List<Pitcher> getPitcherJerseyNumbers(BoxscoreContext context, List<Pitcher> pitchers) {
-        List<Integer> pitcherIds = new ArrayList<>();
 
-        pitcherIds.addAll(context.getTeams().getAway().getPitchers());
-        pitcherIds.addAll(context.getTeams().getAway().getBullpen());
-        pitcherIds.addAll(context.getTeams().getHome().getPitchers());
-        pitcherIds.addAll(context.getTeams().getHome().getBullpen());
+        List<Integer> awayPitcherIds = new ArrayList<>();
+        awayPitcherIds.addAll(context.getTeams().getAway().getPitchers());
+        awayPitcherIds.addAll(context.getTeams().getAway().getBullpen());
+
+        List<Integer> homePitcherIds = new ArrayList<>();
+        homePitcherIds.addAll(context.getTeams().getHome().getPitchers());
+        homePitcherIds.addAll(context.getTeams().getHome().getBullpen());
+
+        pitchers = getPitcherJerseyNumbersByTeam(homePitcherIds, pitchers, "home");
+        pitchers = getPitcherJerseyNumbersByTeam(awayPitcherIds, pitchers, "away");
+
+        return pitchers;
+    }
+
+    private List<Pitcher> getPitcherJerseyNumbersByTeam(List<Integer> pitcherIds, List<Pitcher> pitchers, String team) {
 
         pitcherIds.forEach(pitcherId -> {
             String apiUrl = "https://statsapi.mlb.com/api/v1/people/" + pitcherId;
@@ -212,6 +223,7 @@ public class ScoreCardService {
             pitchers.stream().filter(o -> o.getName().equals(boxscoreName)).forEach(
                     o -> {
                         o.setJerseyNumber(player.getPeople().get(0).getPrimaryNumber());
+                        o.setTeam(team);
                     }
             );
         });
@@ -219,7 +231,54 @@ public class ScoreCardService {
         return pitchers;
     }
 
-    //TODO: Add What Team each pitcher plays for
-    //Should add a method that goes through for home and away and marks what they are based on that
-    //will need to add a home or away variable to the pitcher object
+    private Lineup buildLineUp(BoxscoreContext context) {
+        Lineup lineup = new Lineup();
+
+        List<Integer> awayLineupIds = context.getTeams().getAway().getBattingOrder();
+        List<Integer> homeLineupIds = context.getTeams().getHome().getBattingOrder();
+
+        lineup.setAwayLineup(buildLineupByTeam(awayLineupIds));
+        lineup.setHomeLineup(buildLineupByTeam(homeLineupIds));
+
+        return lineup;
+    }
+
+    private List<String> buildLineupByTeam(List<Integer> lineupIds) {
+        List<String> lineup = new ArrayList<>();
+
+        lineupIds.forEach(pitcherId -> {
+            String apiUrl = "https://statsapi.mlb.com/api/v1/people/" + pitcherId;
+
+            Gson gson = new Gson();
+
+            PlayerLookup player = gson.fromJson(restTemplate.getForObject(apiUrl, String.class), PlayerLookup.class);
+            String boxscoreName = player.getPeople().get(0).getBoxscoreName();
+            lineup.add(boxscoreName);
+        });
+
+        return lineup;
+    }
+
+    private String getPlayResult(String playDescription) {
+        playDescription = playDescription.replace(",","");
+        playDescription = playDescription.replace(".","");
+        playDescription = playDescription.replace("sharply","");
+
+        String[] splitString = playDescription.split(" ");
+
+        if(splitString.length <= 1 && splitString[0].equals("walks")) {
+            return "BB";
+        }
+
+        if(splitString[1].equals("out")) {
+            if(splitString[0].equals("called")) {
+                return "Backwards K";
+            }
+            if(splitString[0].equals("strikes")) {
+                return "K";
+            }
+        }
+
+        return playDescription;
+    }
 }

@@ -2,6 +2,7 @@ package com.mungey.demo.model.plays;
 
 import com.mungey.demo.model.context.MVP;
 import com.mungey.demo.model.context.Pitcher;
+import com.mungey.demo.model.player.Lineup;
 import com.mungey.demo.model.scoreboard.OfficalResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,6 +23,7 @@ public class ScoreCardResponse {
     String firstPitch;
     String gameTime;
     String Attendance;
-    MVP homeMVP;
-    MVP awayMVP;
+    Lineup lineup;
+//    MVP homeMVP;
+//    MVP awayMVP;
 }
