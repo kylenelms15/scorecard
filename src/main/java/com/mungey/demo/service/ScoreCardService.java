@@ -73,7 +73,7 @@ public class ScoreCardService {
             inningPlay.setPlayer(playerName);
 
             String playDescription = play.getResult().getDescription();
-            inningPlay.setResult(getPlayResult(playDescription.replace(playerName + " ", "")));
+            inningPlay.setAtBatResult(getPlayResult(playDescription.replace(playerName + " ", "")));
 
             inningPlay.setDescription(playDescription);
 
@@ -262,23 +262,177 @@ public class ScoreCardService {
     private String getPlayResult(String playDescription) {
         playDescription = playDescription.replace(",","");
         playDescription = playDescription.replace(".","");
-        playDescription = playDescription.replace("sharply","");
+        playDescription = playDescription.replace(":","");
 
         String[] splitString = playDescription.split(" ");
+        ArrayList<String> newList = new ArrayList<>();
 
-        if(splitString.length <= 1 && splitString[0].equals("walks")) {
+        for(int i = 0; i<splitString.length; i++){
+            if(!splitString[i].equals("sharply") && !splitString[i].equals("softly")) {
+                newList.add(splitString[i]);
+            }
+        }
+
+        if(newList.indexOf("upheld") > 0) {
+            newList.subList(0, newList.indexOf("upheld") + 1).clear();
+        }
+
+        if(newList.indexOf("overturned") > 0) {
+            newList.subList(0, newList.indexOf("overturned") + 1).clear();
+        }
+
+        if(newList.get(0).equals("walks")) {
             return "BB";
         }
 
-        if(splitString[1].equals("out")) {
-            if(splitString[0].equals("called")) {
-                return "Backwards K";
+        if(newList.get(0).equals("singles")) {
+            return "1B";
+        }
+
+        if(newList.get(0).equals("doubles")) {
+            return "2B";
+        }
+
+        if(newList.get(0).equals("triples")) {
+            return "3B";
+        }
+
+        if(newList.get(0).equals("homers")) {
+            return "HR";
+        }
+
+        if(newList.get(0).equals("hits")) {
+            if(newList.indexOf("ground-rule")>0) {
+                return "2B GR";
             }
-            if(splitString[0].equals("strikes")) {
-                return "K";
+            if(newList.indexOf("grand")>0) {
+                return "GSHR";
             }
         }
 
-        return playDescription;
+        if(newList.get(0).equals("hit")) {
+            return "HBP";
+        }
+
+        if(newList.get(0).equals("out")) {
+            int sac = newList.indexOf("sacrifice");
+            if(sac > 0 && newList.get(sac + 1).equals("fly")) {
+                return "SF " + getFielder(newList.get(newList.indexOf("to")+1));
+            }
+            if(sac > 0 && newList.get(sac + 1).equals("bunt")) {
+                return "SB " + getFielder(newList.get(5)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
+            }
+        }
+
+        if(newList.get(1).equals("out")) {
+            if(newList.get(0).equals("called")) {
+                return "Backwards K";
+            }
+            if(newList.get(0).equals("strikes")) {
+                return "K";
+            }
+            if(newList.get(0).equals("flies")) {
+                return "F" + getFielder(newList.get(3));
+            }
+            if(newList.get(0).equals("lines")) {
+                return "L" + getFielder(newList.get(3));
+            }
+            if(newList.get(0).equals("pops")) {
+                return "P" + getFielder(newList.get(3));
+            }
+        }
+
+        if(newList.get(0).equals("grounds") || newList.get(0).equals("pops")) {
+            String playResult;
+
+            if(newList.get(3).equals("force")) {
+                if(newList.indexOf("fielded") > 0) {
+                    playResult = getFielder(newList.get(newList.indexOf("by")+1));
+                } else {
+                    playResult = getFielder(newList.get(5)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
+                }
+            } else if(newList.get(3).equals("double")){
+                return buildDoublePlay(newList);
+            }
+            else {
+                playResult = getFielder(newList.get(2)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
+            }
+
+            if(playResult.length() == 2) {
+                return playResult.charAt(1) + "U";
+            }
+
+            if(playResult.length() == 1) {
+                return playResult.charAt(0) + "U";
+            }
+
+            return playResult;
+        }
+
+        if(newList.get(0).equals("lines")) {
+            if(newList.get(3).equals("double")){
+                return buildDoublePlay(newList);
+            }
+            if(newList.get(3).equals("unassisted") && newList.get(4).equals("double") ){
+                return "DP " + getFielder(newList.get(6)) + "U";
+            }
+        }
+
+        if(newList.get(3).equals("fielder's")) {
+            String playResult = "FC ";
+            if(newList.indexOf("by") > 0){
+                return playResult + getFielder(newList.get(newList.indexOf("by") + 1));
+            }
+            return playResult + getFielder(newList.get(6)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
+        }
+
+        if(newList.get(4).equals("error")) {
+            return "E" + getFielder(newList.get(newList.indexOf("by")+1));
+        }
+
+        return "No At Bat";
+    }
+
+    private String getFielder(String player) {
+        if(player.equals("pitcher")) {
+            return "1";
+        }
+        if(player.equals("catcher")) {
+            return "2";
+        }
+        if(player.equals("first")) {
+            return "3";
+        }
+        if(player.equals("second")) {
+            return "4";
+        }
+        if(player.equals("third")) {
+            return "5";
+        }
+        if(player.equals("shortstop")) {
+            return "6";
+        }
+        if(player.equals("left")) {
+            return "7";
+        }
+        if(player.equals("center")) {
+            return "8";
+        }
+        if(player.equals("right")) {
+            return "9";
+        }
+        return "";
+    }
+
+    private String buildDoublePlay(ArrayList<String> newList){
+        String playResult = "DP " + getFielder(newList.get(5));
+
+        for (int i = 0; i< newList.size(); i++) {
+            if (newList.get(i).equals("to")){
+                playResult = playResult + "-" +getFielder(newList.get(i+1));
+            }
+        }
+
+        return playResult;
     }
 }

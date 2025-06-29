@@ -9,9 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlayResponse {
-    String player;
-    String atBatResult;
+public class PlayScoring {
     int outs;
-    String description;
+    String result;
 }
