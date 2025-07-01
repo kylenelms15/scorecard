@@ -12,6 +12,7 @@ import lombok.Setter;
 public class PlayResponse {
     String player;
     String atBatResult;
-    int outs;
+    BSCount count;
     String description;
+    int rbi;
 }

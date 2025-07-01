@@ -5,11 +5,7 @@ import com.mungey.demo.model.context.Pitcher;
 import com.mungey.demo.model.context.BoxscoreContext;
 import com.mungey.demo.model.player.Lineup;
 import com.mungey.demo.model.player.PlayerLookup;
-import com.mungey.demo.model.plays.HalfInning;
-import com.mungey.demo.model.plays.PlayResponse;
-import com.mungey.demo.model.plays.ScoreCardResponse;
-import com.mungey.demo.model.plays.AllPlays;
-import com.mungey.demo.model.plays.Plays;
+import com.mungey.demo.model.plays.*;
 import com.mungey.demo.model.scoreboard.OfficalResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -74,6 +70,13 @@ public class ScoreCardService {
 
             String playDescription = play.getResult().getDescription();
             inningPlay.setAtBatResult(getPlayResult(playDescription.replace(playerName + " ", "")));
+
+            BSCount count = new BSCount();
+            count.setBalls(play.getCount().getBalls());
+            count.setStrikes(play.getCount().getStrikes());
+            count.setOuts(play.getCount().getOuts());
+            inningPlay.setCount(count);
+            inningPlay.setRbi(play.getResult().getRbi());
 
             inningPlay.setDescription(playDescription);
 
@@ -265,132 +268,22 @@ public class ScoreCardService {
         playDescription = playDescription.replace(":","");
 
         String[] splitString = playDescription.split(" ");
-        ArrayList<String> newList = new ArrayList<>();
+        ArrayList<String> playStringList = new ArrayList<>();
 
         for(int i = 0; i<splitString.length; i++){
             if(!splitString[i].equals("sharply") && !splitString[i].equals("softly")) {
-                newList.add(splitString[i]);
+                playStringList.add(splitString[i]);
             }
         }
 
-        if(newList.indexOf("upheld") > 0) {
-            newList.subList(0, newList.indexOf("upheld") + 1).clear();
+        if(playStringList.contains("upheld")) {
+            playStringList.subList(0, playStringList.indexOf("upheld") + 1).clear();
+        }
+        if(playStringList.contains("overturned")) {
+            playStringList.subList(0, playStringList.indexOf("overturned") + 1).clear();
         }
 
-        if(newList.indexOf("overturned") > 0) {
-            newList.subList(0, newList.indexOf("overturned") + 1).clear();
-        }
-
-        if(newList.get(0).equals("walks")) {
-            return "BB";
-        }
-
-        if(newList.get(0).equals("singles")) {
-            return "1B";
-        }
-
-        if(newList.get(0).equals("doubles")) {
-            return "2B";
-        }
-
-        if(newList.get(0).equals("triples")) {
-            return "3B";
-        }
-
-        if(newList.get(0).equals("homers")) {
-            return "HR";
-        }
-
-        if(newList.get(0).equals("hits")) {
-            if(newList.indexOf("ground-rule")>0) {
-                return "2B GR";
-            }
-            if(newList.indexOf("grand")>0) {
-                return "GSHR";
-            }
-        }
-
-        if(newList.get(0).equals("hit")) {
-            return "HBP";
-        }
-
-        if(newList.get(0).equals("out")) {
-            int sac = newList.indexOf("sacrifice");
-            if(sac > 0 && newList.get(sac + 1).equals("fly")) {
-                return "SF " + getFielder(newList.get(newList.indexOf("to")+1));
-            }
-            if(sac > 0 && newList.get(sac + 1).equals("bunt")) {
-                return "SB " + getFielder(newList.get(5)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
-            }
-        }
-
-        if(newList.get(1).equals("out")) {
-            if(newList.get(0).equals("called")) {
-                return "Backwards K";
-            }
-            if(newList.get(0).equals("strikes")) {
-                return "K";
-            }
-            if(newList.get(0).equals("flies")) {
-                return "F" + getFielder(newList.get(3));
-            }
-            if(newList.get(0).equals("lines")) {
-                return "L" + getFielder(newList.get(3));
-            }
-            if(newList.get(0).equals("pops")) {
-                return "P" + getFielder(newList.get(3));
-            }
-        }
-
-        if(newList.get(0).equals("grounds") || newList.get(0).equals("pops")) {
-            String playResult;
-
-            if(newList.get(3).equals("force")) {
-                if(newList.indexOf("fielded") > 0) {
-                    playResult = getFielder(newList.get(newList.indexOf("by")+1));
-                } else {
-                    playResult = getFielder(newList.get(5)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
-                }
-            } else if(newList.get(3).equals("double")){
-                return buildDoublePlay(newList);
-            }
-            else {
-                playResult = getFielder(newList.get(2)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
-            }
-
-            if(playResult.length() == 2) {
-                return playResult.charAt(1) + "U";
-            }
-
-            if(playResult.length() == 1) {
-                return playResult.charAt(0) + "U";
-            }
-
-            return playResult;
-        }
-
-        if(newList.get(0).equals("lines")) {
-            if(newList.get(3).equals("double")){
-                return buildDoublePlay(newList);
-            }
-            if(newList.get(3).equals("unassisted") && newList.get(4).equals("double") ){
-                return "DP " + getFielder(newList.get(6)) + "U";
-            }
-        }
-
-        if(newList.get(3).equals("fielder's")) {
-            String playResult = "FC ";
-            if(newList.indexOf("by") > 0){
-                return playResult + getFielder(newList.get(newList.indexOf("by") + 1));
-            }
-            return playResult + getFielder(newList.get(6)) + "-" + getFielder(newList.get(newList.indexOf("to")+1));
-        }
-
-        if(newList.get(4).equals("error")) {
-            return "E" + getFielder(newList.get(newList.indexOf("by")+1));
-        }
-
-        return "No At Bat";
+        return getPlayShortform(playStringList);
     }
 
     private String getFielder(String player) {
@@ -434,5 +327,124 @@ public class ScoreCardService {
         }
 
         return playResult;
+    }
+
+    private String getPlayShortform(ArrayList<String> playStringList) {
+
+        if(playStringList.contains("walks")) {
+            if(playStringList.indexOf("intentionally") >=0) {
+                return "IBB";
+            }
+            return "BB";
+        }
+
+        if(playStringList.contains("singles")) {
+            return "1B";
+        }
+
+        if(playStringList.contains("doubles")) {
+            return "2B";
+        }
+
+        if(playStringList.contains("triples")) {
+            return "3B";
+        }
+
+        if(playStringList.contains("homers")) {
+            return "HR";
+        }
+
+        if(playStringList.contains("hits")) {
+            if(playStringList.contains("ground-rule")) {
+                return "2B GR";
+            }
+            if(playStringList.contains("grand")) {
+                return "GSHR";
+            }
+        }
+
+        if(playStringList.contains("hit")) {
+            return "HBP";
+        }
+
+        if(playStringList.contains("out")) {
+            if(playStringList.contains("sacrifice")) {
+                if(playStringList.contains("fly")) {
+                    return "SF " + getFielder(playStringList.get(playStringList.indexOf("to")+1));
+                }
+
+                if(playStringList.contains("bunt")) {
+                    return "SB " + getFielder(playStringList.get(5)) + "-" + getFielder(playStringList.get(playStringList.indexOf("to")+1));
+                }
+            }
+            if(playStringList.contains("called")) {
+                return "Backwards K";
+            }
+            if(playStringList.contains("strikes")) {
+                return "K";
+            }
+            if(playStringList.contains("flies")) {
+                return "F" + getFielder(playStringList.get(3));
+            }
+            if(playStringList.contains("lines")) {
+                return "L" + getFielder(playStringList.get(3));
+            }
+            if(playStringList.contains("pops")) {
+                return "P" + getFielder(playStringList.get(3));
+            }
+        }
+
+        if(playStringList.contains("grounds") || playStringList.contains("pops")) {
+            String playResult;
+
+            if(playStringList.contains("force")) {
+                if(playStringList.contains("fielded")) {
+                    playResult = getFielder(playStringList.get(playStringList.indexOf("by")+1));
+                } else {
+                    playResult = getFielder(playStringList.get(5)) + "-" + getFielder(playStringList.get(playStringList.indexOf("to")+1));
+                }
+            } else if(playStringList.contains("double")){
+                return buildDoublePlay(playStringList);
+            }
+            else {
+                playResult = getFielder(playStringList.get(2)) + "-" + getFielder(playStringList.get(playStringList.indexOf("to")+1));
+            }
+
+            if(playResult.length() == 2) {
+                return playResult.charAt(1) + "U";
+            }
+
+            if(playResult.length() == 1) {
+                return playResult.charAt(0) + "U";
+            }
+
+            return playResult;
+        }
+
+        if(playStringList.contains("lines")) {
+            if(playStringList.contains("double")){
+                return buildDoublePlay(playStringList);
+            }
+            if(playStringList.contains("unassisted") && playStringList.contains("double")){
+                return "DP " + getFielder(playStringList.get(6)) + "U";
+            }
+        }
+
+        if(playStringList.contains("fielder's")) {
+            String playResult = "FC ";
+
+            if(playStringList.contains("by")){
+                return playResult + getFielder(playStringList.get(playStringList.indexOf("by") + 1));
+            }
+
+            return playResult + getFielder(playStringList.get(6)) + "-" + getFielder(playStringList.get(playStringList.indexOf("to")+1));
+        }
+
+        if(playStringList.contains("error")) {
+            return "E" + getFielder(playStringList.get(playStringList.indexOf("by")+1));
+        }
+
+        return playStringList.toString();
+        //return "No At Bat";
     }
 }
