@@ -1,4 +1,4 @@
-package com.mungey.demo.model.plays;
+package com.mungey.demo.model.context;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,10 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlayResponse {
-    String player;
-    String atBatResult;
-    BSCount count;
-    int rbi;
-    String description;
+public class Split {
+    Stat stat;
+    String group;
 }

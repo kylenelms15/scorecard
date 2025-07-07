@@ -9,17 +9,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Pitcher {
-    int jerseyNumber;
-    String name;
+public class Stat {
     String inningsPitched;
     int hits;
     int runs;
     int earnedRuns;
-    int walks;
+    int baseOnBalls;
     int strikeOuts;
     int battersFaced;
-    int pitches;
-    String team;
-    int pitcherId;
+    int pitchesThrown;
+    int strikes;
 }

@@ -3,6 +3,8 @@ package com.mungey.demo.service;
 import com.google.gson.Gson;
 import com.mungey.demo.model.context.Pitcher;
 import com.mungey.demo.model.context.BoxscoreContext;
+import com.mungey.demo.model.context.PlayerStats;
+import com.mungey.demo.model.context.Stat;
 import com.mungey.demo.model.player.Lineup;
 import com.mungey.demo.model.player.PlayerLookup;
 import com.mungey.demo.model.plays.*;
@@ -14,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class ScoreCardService {
@@ -22,7 +25,6 @@ public class ScoreCardService {
     private RestTemplate restTemplate;
 
     private String battersFaced;
-    private String pitchesStrikes;
 
     public ScoreCardResponse buildScoreCard(String gameId) {
         ScoreCardResponse scoreCardResponse = new ScoreCardResponse();
@@ -31,12 +33,12 @@ public class ScoreCardService {
 
         buildOfficals(scoreCardResponse, boxscoreContext);
         buildExtraContext(scoreCardResponse, boxscoreContext);
-        scoreCardResponse.setPitchers(getPitcherJerseyNumbers(boxscoreContext, scoreCardResponse.getPitchers()));
+        scoreCardResponse.setPitchers(fillPitcherStats(getPitcherJerseyNumbers(boxscoreContext, scoreCardResponse.getPitchers()), gameId));
         scoreCardResponse.setLineup(buildLineUp(boxscoreContext));
 
         List<Plays> playsList = getPlays(gameId).getAllPlays();
         int finalInning = getLastInning(playsList);
-        scoreCardResponse.setInnings(buildPlays(finalInning, playsList, scoreCardResponse.getLineup()));
+        scoreCardResponse.setInnings(buildPlays(finalInning, playsList));
 
         return scoreCardResponse;
     }
@@ -101,7 +103,7 @@ public class ScoreCardService {
         return plays.getLast().getAbout().getInning();
     }
 
-    private List<HalfInning> buildPlays(int finalInning, List<Plays> playsList, Lineup lineup) {
+    private List<HalfInning> buildPlays(int finalInning, List<Plays> playsList) {
         List<HalfInning> innings = new ArrayList<>();
 
         for(int i = 1; i <= finalInning; i++){
@@ -140,7 +142,6 @@ public class ScoreCardService {
         boxscoreContext.getInfo().forEach(contextInfo -> {
             switch(contextInfo.getLabel()) {
                 case "Pitches-strikes":
-                    pitchesStrikes = contextInfo.getValue();
                     break;
                 case "Batters faced":
                     battersFaced = contextInfo.getValue();
@@ -160,35 +161,25 @@ public class ScoreCardService {
             }
         });
 
-        scoreCard.setPitchers(buildPitchers(battersFaced, pitchesStrikes));
+        scoreCard.setPitchers(buildPitchers(battersFaced));
 
         return scoreCard;
     }
 
-    private List<Pitcher> buildPitchers(String battersString, String strikesString) {
+    private List<Pitcher> buildPitchers(String battersString) {
         List<Pitcher> battersFaced = new ArrayList<>();
 
         battersString = StringUtils.substring(battersString, 0, battersString.length() - 1);
-        strikesString = StringUtils.substring(strikesString, 0, strikesString.length() - 1);
 
         String[] facedArray = battersString.split(";");
-        String[] strikesArray = strikesString.split(";");
 
         for(int i=0;i< facedArray.length; i++) {
             Pitcher pitcher = new Pitcher();
 
             String facedString = facedArray[i];
-            String pitchesString = strikesArray[i];
-
-            String[] pitchesArray = pitchesString.split("-");
 
             int numBatters = Integer.parseInt(facedString.replaceAll("[^0-9]", ""));
-            int numPitches = Integer.parseInt(pitchesArray[0].replaceAll("[^0-9]", ""));
-            int numStrikes = Integer.parseInt(pitchesArray[1]);
 
-            pitcher.setBattersFaced(numBatters);
-            pitcher.setPitches(numPitches);
-            pitcher.setStrikes(numStrikes);
             pitcher.setName(facedString.substring(0, facedString.indexOf(String.valueOf(numBatters))).trim());
 
             battersFaced.add(pitcher);
@@ -227,6 +218,7 @@ public class ScoreCardService {
                     o -> {
                         o.setJerseyNumber(player.getPeople().get(0).getPrimaryNumber());
                         o.setTeam(team);
+                        o.setPitcherId(pitcherId);
                     }
             );
         });
@@ -446,5 +438,41 @@ public class ScoreCardService {
 
         return playStringList.toString();
         //return "No At Bat";
+    }
+
+    private List<Pitcher> fillPitcherStats(List<Pitcher> pitchersList, String gameId) {
+        List<Pitcher> pitchers = new ArrayList<>();
+
+        pitchersList.forEach(incomingPitcher -> {
+            Pitcher pitcher = new Pitcher();
+            String apiUrl = "https://statsapi.mlb.com/api/v1/people/" + incomingPitcher.getPitcherId() + "/stats/game/" + gameId;
+
+            Gson gson = new Gson();
+
+            AtomicReference<Stat> pitcherStat = new AtomicReference<>();
+            PlayerStats playerStats = gson.fromJson(restTemplate.getForObject(apiUrl, String.class), PlayerStats.class);
+
+            playerStats.getStats().get(0).getSplits().forEach(split -> {
+                if(split.getGroup().equals("pitching")) {
+                    pitcherStat.set(split.getStat());
+                }
+            });
+            pitcher.setJerseyNumber(incomingPitcher.getJerseyNumber());
+            pitcher.setName(incomingPitcher.getName());
+            pitcher.setInningsPitched(pitcherStat.get().getInningsPitched());
+            pitcher.setHits(pitcherStat.get().getHits());
+            pitcher.setRuns(pitcherStat.get().getRuns());
+            pitcher.setEarnedRuns(pitcherStat.get().getEarnedRuns());
+            pitcher.setWalks(pitcherStat.get().getBaseOnBalls());
+            pitcher.setStrikeOuts(pitcherStat.get().getStrikeOuts());
+            pitcher.setBattersFaced(pitcherStat.get().getBattersFaced());
+            pitcher.setPitches(pitcherStat.get().getPitchesThrown());
+            pitcher.setTeam(incomingPitcher.getTeam());
+            pitcher.setPitcherId(incomingPitcher.getPitcherId());
+
+            pitchers.add(pitcher);
+        });
+
+        return pitchers;
     }
 }
